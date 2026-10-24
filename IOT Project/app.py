@@ -18,12 +18,17 @@ def home():
     return render_template("index.html")
 
 # ESP32 sends readings to this endpoint
+
 @app.route("/api/update", methods=["POST"])
 def update_data():
     incoming = request.get_json(silent=True)
 
     if not incoming:
+        print("ESP32 ERROR: No JSON data received", flush=True)
         return jsonify({"error": "No JSON data received"}), 400
+
+    # Display received sensor data in Render Application Logs
+    print("ESP32 DATA RECEIVED:", incoming, flush=True)
 
     try:
         for key in ("in_count", "out_count", "total"):
@@ -39,9 +44,12 @@ def update_data():
 
         sensor_data["last_update"] = datetime.now().isoformat()
 
+        print("SENSOR DATA SAVED:", sensor_data, flush=True)
+
         return jsonify({"status": "success"})
 
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as error:
+        print("SENSOR DATA ERROR:", str(error), flush=True)
         return jsonify({"error": "Invalid sensor data"}), 400
 
 # Website reads the latest values from this endpoint
